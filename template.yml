@@ -1,0 +1,50 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  VerificationToken:
+    Type: String
+
+Resources:
+  Function:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: "slack-rembg-lambda"
+      PackageType: Image
+      MemorySize: 5120
+      EphemeralStorage:
+        Size: 512
+      Timeout: 360
+      Environment:
+        Variables:
+          VERIFICATION_TOKEN: !Sub "${VerificationToken}"
+          API_TOKEN: !Sub "${ApiToken}"
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerTag: slack-rembg-lambda
+      DockerContext: ./
+
+  Permission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunctionUrl
+      FunctionName: !GetAtt Function.Arn
+      FunctionUrlAuthType: NONE
+      Principal: "*"
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${Function}"
+
+  Url:
+    Type: AWS::Lambda::Url
+    Properties:
+      AuthType: NONE
+      TargetFunctionArn: !GetAtt Function.Arn
+
+Outputs:
+  UrlOutput:
+    Value: !GetAtt Url.FunctionUrl
+    Export:
+      Name: FunctionUrl
