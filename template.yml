@@ -4,6 +4,10 @@ Transform: AWS::Serverless-2016-10-31
 Parameters:
   VerificationToken:
     Type: String
+  ApiToken:
+    Type: String
+  BotUserId:
+    Type: String
 
 Resources:
   Function:
@@ -19,6 +23,7 @@ Resources:
         Variables:
           VERIFICATION_TOKEN: !Sub "${VerificationToken}"
           API_TOKEN: !Sub "${ApiToken}"
+          BOT_USER_ID: !Sub "${BotUserId}"
     Metadata:
       Dockerfile: Dockerfile
       DockerTag: slack-rembg-lambda
@@ -31,6 +36,13 @@ Resources:
       FunctionName: !GetAtt Function.Arn
       FunctionUrlAuthType: NONE
       Principal: "*"
+
+  EventInvokeConfig:
+    Type: AWS::Lambda::EventInvokeConfig
+    Properties:
+      FunctionName: !Ref Function
+      MaximumRetryAttempts: 0
+      Qualifier: "$LATEST"
 
   LogGroup:
     Type: AWS::Logs::LogGroup
