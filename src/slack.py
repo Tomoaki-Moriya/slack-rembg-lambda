@@ -7,29 +7,37 @@ import requests
 class SlackService:
 
     def __init__(self) -> None:
-        self.__verification_token: Final = os.environ["VERIFICATION_TOKEN"]
-        self.__api_token: Final = os.environ["API_TOKEN"]
-        self.__bot_user_id: Final = os.environ["BOT_USER_ID"]
+        self._verification_token: Final = os.environ["VERIFICATION_TOKEN"]
+        self._api_token: Final = os.environ["API_TOKEN"]
+        self._bot_user_id: Final = os.environ["BOT_USER_ID"]
 
     def auth(self, body: dict) -> Optional[dict[str, Any]]:
+        """
+        SlackのEvent SubscriptionsのURL認証を行う。
+        認証後のリクエストでは、ボット自身のメッセージは無視する。
+        無視しないと、ボットが自身のメッセージにLambdaが反応して無限ループに陥る。
+        """
         event_type = body.get("type")
 
-        if event_type == "url_verification" and body["token"] == self.__verification_token:
+        if event_type == "url_verification" and body["token"] == self._verification_token:
             return {
                 "challenge": body["challenge"]
             }
 
-        if body["event"]["user_id"] == self.__bot_user_id:
+        if body["event"]["user_id"] == self._bot_user_id:
             return {
-                "statusCode": 400
+                "statusCode": 200
             }
 
         return None
 
     def download_file(self, file_id: str, download_dir: str) -> str:
-        url_private_download, original_filename = self.__get_url_private_download(
+        """
+        file_idでSlackにアップロードされたファイルをダウンロードする。
+        """
+        url_private_download, original_filename = self._get_url_private_download(
             file_id)
-        headers = {"Authorization": f"Bearer {self.__api_token}"}
+        headers = {"Authorization": f"Bearer {self._api_token}"}
         file_response = requests.get(
             url_private_download, headers=headers, stream=True)
         if file_response.status_code == 200:
@@ -44,8 +52,11 @@ class SlackService:
             raise ValueError(f"Failed to download file with id {file_id}")
 
     def upload_file(self, channel_id: str, file_path: str, message: Optional[str] = None) -> None:
+        """
+        指定したチャンネルにファイルをアップロードする。
+        """
         url = "https://slack.com/api/files.getUploadURLExternal"
-        headers = {"Authorization": f"Bearer {self.__api_token}"}
+        headers = {"Authorization": f"Bearer {self._api_token}"}
         with open(file_path, 'rb') as f:
             payload = {
                 "filename": os.path.basename(file_path),
@@ -80,11 +91,11 @@ class SlackService:
                 raise ValueError(
                     f"Failed to complete upload for channel {channel_id}")
 
-    def __get_url_private_download(self, file_id: str) -> tuple[str, str]:
+    def _get_url_private_download(self, file_id: str) -> tuple[str, str]:
         url = f"https://slack.com/api/files.info"
         send_data = {
             "file": file_id,
-            "token": self.__api_token
+            "token": self._api_token
         }
         res = requests.post(url, send_data)
         if not res.ok:

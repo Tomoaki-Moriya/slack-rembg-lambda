@@ -10,6 +10,10 @@ image_service = ImageService(u2net_home)
 
 
 def lambda_handler(event, _):
+    """
+    Slackのヘッダーにリトライの情報がある場合は、無視する。
+    それ以外の場合は、Slackから送られてきた画像を背景除去して、アップロードする。
+    """
     if "headers" in event and "x-slack-retry-reason" in event["headers"]:
         return {
             "statusCode": 200
