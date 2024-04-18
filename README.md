@@ -13,7 +13,7 @@ pip install -r src/requirements.txt
 ## Download u2net.onnx and put current directory.
 
 ```
-https://drive.google.com/uc?
+https://drive.google.com/uc?id=1tCU5MM1LhRgGou5OpmpjBQbSrYIUoYab
 ```
 
 # Deploy
@@ -36,3 +36,5 @@ sam deploy \
 --profile <your_profile_name>
 
 ```
+
+aws s3api create-bucket --bucket <bucket_name> --region <region> --create-bucket-configuration LocationConstraint=<region> --profile <your_profile_name>
